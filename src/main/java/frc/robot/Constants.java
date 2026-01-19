@@ -53,9 +53,15 @@ public final class Constants {
     public static final int DRIVER_CONTROLLER_PORT = 0;
     public static final int OPERATOR_CONTROLLER_PORT = 1;
 
+    // If this is true, then the operator port above is ignored
+    public static final boolean OPERATOR_CONTROLLER_IS_DRIVER_CONTROLLER = true;
+
     // This value is multiplied by the joystick value when rotating the robot to
     // help avoid turning too fast and beign difficult to control
-    public static final double DRIVE_SCALING = .7;
-    public static final double ROTATION_SCALING = .8;
+    public static final double DRIVE_SCALING = .35;
+    public static final double ROTATION_SCALING = .4;
+
+    public static final double SHOOTER_SCALING = 0.75;
+    public static final double FEEDER_SCALING = 0.75;
   }
 }

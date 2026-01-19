@@ -33,9 +33,8 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(
       DRIVER_CONTROLLER_PORT);
 
-  // The operator's controller
-  private final CommandXboxController operatorController = new CommandXboxController(
-      OPERATOR_CONTROLLER_PORT);
+  // The operator's controller assigned in constructor
+  private final CommandXboxController operatorController;
 
   // The autonomous chooser
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
@@ -44,6 +43,14 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+
+
+    if (OPERATOR_CONTROLLER_IS_DRIVER_CONTROLLER) {
+        operatorController = driverController;
+    } else {
+        operatorController = new CommandXboxController(OPERATOR_CONTROLLER_PORT);
+    }
+
     configureBindings();
 
     // Set the options to show up in the Dashboard for selecting auto modes. If you

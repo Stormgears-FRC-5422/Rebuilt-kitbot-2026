@@ -16,6 +16,7 @@ import frc.robot.commands.Intake;
 import frc.robot.commands.LaunchSequence;
 import frc.robot.subsystems.CANDriveSubsystem;
 import frc.robot.subsystems.CANFuelSubsystem;
+import frc.robot.subsystems.Lights;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -28,6 +29,7 @@ public class RobotContainer {
   // The robot's subsystems
   private final CANDriveSubsystem driveSubsystem = new CANDriveSubsystem();
   private final CANFuelSubsystem fuelSubsystem = new CANFuelSubsystem();
+  private Lights lights;
 
   // The driver's controller
   private final CommandXboxController driverController = new CommandXboxController(
@@ -43,7 +45,9 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-
+    //if (Toggles.useLights) {
+      lights = new Lights();
+    //}
 
     if (OPERATOR_CONTROLLER_IS_DRIVER_CONTROLLER) {
         operatorController = driverController;

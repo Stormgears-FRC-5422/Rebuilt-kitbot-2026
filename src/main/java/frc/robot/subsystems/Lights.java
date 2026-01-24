@@ -32,7 +32,7 @@ import static edu.wpi.first.units.Units.*;
             addressableLED = new AddressableLED(0);
 
            // addressableLEDBuffer = new AddressableLEDBuffer(Constants.Lights.ledLength);
-            addressableLEDBuffer = new AddressableLEDBuffer(23);
+            addressableLEDBuffer = new AddressableLEDBuffer(33);
             addressableLED.setLength(addressableLEDBuffer.getLength());
             addressableLED.start();
              setViews();
@@ -82,8 +82,8 @@ import static edu.wpi.first.units.Units.*;
             // Right view is reversed because LED strips are wired in series
            // m_left = addressableLEDBuffer.createView(Constants.Lights.leftViewStart, Constants.Lights.leftViewEnd);
           //  m_right = addressableLEDBuffer.createView(Constants.Lights.rightViewStart, Constants.Lights.rightViewEnd).reversed();
-            m_left = addressableLEDBuffer.createView(0,11);
-            m_right = addressableLEDBuffer.createView(12,22).reversed();
+            m_left = addressableLEDBuffer.createView(0,16);
+            m_right = addressableLEDBuffer.createView(17,32).reversed();
         }
     }
 

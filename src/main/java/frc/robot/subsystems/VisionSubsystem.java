@@ -55,9 +55,9 @@ public class VisionSubsystem extends SubsystemBase {
     // Standard deviations: how much we trust odometry vs vision
     poseEstimator = new DifferentialDrivePoseEstimator(
         kinematics,
-        driveSubsystem.getHeading(),
-        driveSubsystem.getLeftPositionMeters(),
-        driveSubsystem.getRightPositionMeters(),
+        driveSubsystem.heading,
+        driveSubsystem.leftPositionMeters,
+        driveSubsystem.rightPositionMeters,
         new Pose2d(),  // Start at origin
         VecBuilder.fill(0.05, 0.05, 0.01),  // State std devs (x, y, theta) - trust odometry
         VecBuilder.fill(0.5, 0.5, 0.5)      // Vision std devs - less trust in vision
@@ -72,9 +72,9 @@ public class VisionSubsystem extends SubsystemBase {
     // STEP 1: Update odometry (runs every loop)
     // ========================================
     poseEstimator.update(
-        driveSubsystem.getHeading(),
-        driveSubsystem.getLeftPositionMeters(),
-        driveSubsystem.getRightPositionMeters()
+        driveSubsystem.heading,
+        driveSubsystem.leftPositionMeters,
+        driveSubsystem.rightPositionMeters
     );
 
     // ========================================
@@ -125,12 +125,11 @@ public class VisionSubsystem extends SubsystemBase {
    * Call this at the start of a match when you know where the robot is.
    */
   public void resetPose(Pose2d pose) {
-    driveSubsystem.resetEncoders();
-    driveSubsystem.resetGyro();
+    driveSubsystem.resetOdometry();
     poseEstimator.resetPosition(
-        driveSubsystem.getHeading(),
-        driveSubsystem.getLeftPositionMeters(),
-        driveSubsystem.getRightPositionMeters(),
+        driveSubsystem.heading,
+        driveSubsystem.leftPositionMeters,
+        driveSubsystem.rightPositionMeters,
         pose
     );
   }

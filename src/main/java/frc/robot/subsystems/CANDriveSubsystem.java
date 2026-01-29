@@ -31,8 +31,14 @@ public class CANDriveSubsystem extends SubsystemBase {
   private final RelativeEncoder rightEncoder;
 
   // Gyro for tracking robot heading (using ADXRS450 on SPI port)
-  // If you don't have a gyro, you can use a simulated one or remove gyro-based heading
   private final ADXRS450_Gyro gyro;
+
+  // ========================================
+  // ODOMETRY DATA - Public so VisionSubsystem can access directly
+  // ========================================
+  public double leftPositionMeters = 0;
+  public double rightPositionMeters = 0;
+  public Rotation2d heading = new Rotation2d();
 
   public CANDriveSubsystem() {
     // create brushed motors for drive
@@ -87,54 +93,32 @@ public class CANDriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Output encoder and gyro values to SmartDashboard for debugging
-    SmartDashboard.putNumber("Drive/Left Position (m)", getLeftPositionMeters());
-    SmartDashboard.putNumber("Drive/Right Position (m)", getRightPositionMeters());
-    SmartDashboard.putNumber("Drive/Gyro Angle (deg)", getHeading().getDegrees());
+    // ========================================
+    // Update odometry data every loop
+    // ========================================
+    leftPositionMeters = leftEncoder.getPosition() * ENCODER_POSITION_FACTOR;
+    rightPositionMeters = rightEncoder.getPosition() * ENCODER_POSITION_FACTOR;
+    heading = Rotation2d.fromDegrees(-gyro.getAngle());  // Negative: gyro is CW+, WPILib is CCW+
+
+    // Output to SmartDashboard for debugging
+    SmartDashboard.putNumber("Drive/Left Position (m)", leftPositionMeters);
+    SmartDashboard.putNumber("Drive/Right Position (m)", rightPositionMeters);
+    SmartDashboard.putNumber("Drive/Gyro Angle (deg)", heading.getDegrees());
   }
 
   public void driveArcade(double xSpeed, double zRotation) {
     drive.arcadeDrive(xSpeed, zRotation);
   }
 
-  // ========================================
-  // ODOMETRY METHODS - Used by VisionSubsystem for pose estimation
-  // ========================================
-
   /**
-   * @return Left wheel position in meters
+   * Resets the encoders and gyro to zero
    */
-  public double getLeftPositionMeters() {
-    return leftEncoder.getPosition() * ENCODER_POSITION_FACTOR;
-  }
-
-  /**
-   * @return Right wheel position in meters
-   */
-  public double getRightPositionMeters() {
-    return rightEncoder.getPosition() * ENCODER_POSITION_FACTOR;
-  }
-
-  /**
-   * @return Robot heading as a Rotation2d (from gyro)
-   */
-  public Rotation2d getHeading() {
-    // Negative because gyros are typically CW positive, but WPILib uses CCW positive
-    return Rotation2d.fromDegrees(-gyro.getAngle());
-  }
-
-  /**
-   * Resets the encoders to zero
-   */
-  public void resetEncoders() {
+  public void resetOdometry() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
-  }
-
-  /**
-   * Resets the gyro heading to zero
-   */
-  public void resetGyro() {
     gyro.reset();
+    leftPositionMeters = 0;
+    rightPositionMeters = 0;
+    heading = new Rotation2d();
   }
 }

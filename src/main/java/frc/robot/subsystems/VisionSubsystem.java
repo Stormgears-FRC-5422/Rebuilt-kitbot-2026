@@ -4,72 +4,134 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
 import frc.robot.LimelightHelpers.PoseEstimate;
 
+import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.Constants.VisionConstants.*;
 
 /**
- * VisionSubsystem handles AprilTag detection using a Limelight camera.
+ * VisionSubsystem handles AprilTag detection and robot pose estimation.
  * 
- * CONSERVATIVE MERGING RULES:
- * - If 2+ AprilTags are detected: ALWAYS merge (high confidence)
- * - If 1 AprilTag detected AND distance < 9 feet: merge (medium confidence)
- * - Otherwise: DON'T merge (keep last known good pose)
+ * Uses a DifferentialDrivePoseEstimator that combines:
+ * - Wheel encoder odometry (continuous, drifts over time)
+ * - Vision measurements from Limelight (when reliable)
+ * 
+ * CONSERVATIVE VISION MERGING RULES:
+ * - If 2+ AprilTags detected: merge with high confidence
+ * - If 1 AprilTag detected AND distance < 9 feet: merge with medium confidence
+ * - Otherwise: rely on odometry only
  */
 public class VisionSubsystem extends SubsystemBase {
 
-  // The robot's estimated position on the field (updated when we get valid vision data)
-  public Pose2d robotPose = new Pose2d();
-  
-  // Field visualization for SmartDashboard/Shuffleboard
+  // Reference to drive subsystem for encoder/gyro data
+  private final CANDriveSubsystem driveSubsystem;
+
+  // Kinematics describes the robot's geometry (track width)
+  private final DifferentialDriveKinematics kinematics = 
+      new DifferentialDriveKinematics(TRACK_WIDTH_METERS);
+
+  // Pose estimator combines odometry + vision measurements
+  private final DifferentialDrivePoseEstimator poseEstimator;
+
+  // Field visualization for SmartDashboard
   private final Field2d field2d = new Field2d();
 
-  public VisionSubsystem() {
-    // Add the field to SmartDashboard so we can see the robot position
+  // The robot's estimated pose (updated every loop)
+  public Pose2d robotPose = new Pose2d();
+
+  public VisionSubsystem(CANDriveSubsystem driveSubsystem) {
+    this.driveSubsystem = driveSubsystem;
+
+    // Create the pose estimator
+    // Parameters: kinematics, gyro angle, left distance, right distance, initial pose
+    // Standard deviations: how much we trust odometry vs vision
+    poseEstimator = new DifferentialDrivePoseEstimator(
+        kinematics,
+        driveSubsystem.getHeading(),
+        driveSubsystem.getLeftPositionMeters(),
+        driveSubsystem.getRightPositionMeters(),
+        new Pose2d(),  // Start at origin
+        VecBuilder.fill(0.05, 0.05, 0.01),  // State std devs (x, y, theta) - trust odometry
+        VecBuilder.fill(0.5, 0.5, 0.5)      // Vision std devs - less trust in vision
+    );
+
     SmartDashboard.putData("Field", field2d);
   }
 
   @Override
   public void periodic() {
     // ========================================
-    // STEP 1: Get the latest pose estimate from Limelight
+    // STEP 1: Update odometry (runs every loop)
     // ========================================
-    PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(LIMELIGHT_NAME);
+    poseEstimator.update(
+        driveSubsystem.getHeading(),
+        driveSubsystem.getLeftPositionMeters(),
+        driveSubsystem.getRightPositionMeters()
+    );
 
     // ========================================
-    // STEP 2: Merge pose if it meets our criteria
+    // STEP 2: Get vision data and merge if reliable
     // ========================================
+    PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(LIMELIGHT_NAME);
     boolean didMerge = false;
-    
+
     if (estimate != null && estimate.tagCount > 0) {
-      // Rule 1: If we see 2+ tags, always merge (high confidence)
+      // Rule 1: 2+ tags = high confidence, merge with tight std devs
       if (estimate.tagCount >= MIN_TAGS_FOR_MERGE) {
-        robotPose = estimate.pose;
+        poseEstimator.addVisionMeasurement(
+            estimate.pose, 
+            estimate.timestampSeconds,
+            VecBuilder.fill(0.3, 0.3, 0.3)  // High confidence
+        );
         didMerge = true;
       }
-      // Rule 2: If we see 1 tag AND it's close enough, merge
+      // Rule 2: 1 tag close enough = medium confidence
       else if (estimate.tagCount == 1 && 
                estimate.avgTagDist < MAX_SINGLE_TAG_DISTANCE_METERS) {
-        robotPose = estimate.pose;
+        poseEstimator.addVisionMeasurement(
+            estimate.pose, 
+            estimate.timestampSeconds,
+            VecBuilder.fill(0.7, 0.7, 0.9)  // Medium confidence (more uncertainty)
+        );
         didMerge = true;
       }
     }
 
     // ========================================
-    // STEP 3: Update Field2d and SmartDashboard
+    // STEP 3: Get the estimated pose and update display
     // ========================================
+    robotPose = poseEstimator.getEstimatedPosition();
     field2d.setRobotPose(robotPose);
-    
+
+    // Debug output
     SmartDashboard.putNumber("Vision/Tag Count", estimate != null ? estimate.tagCount : 0);
     SmartDashboard.putNumber("Vision/Avg Tag Distance (m)", estimate != null ? estimate.avgTagDist : 0);
     SmartDashboard.putBoolean("Vision/Did Merge", didMerge);
-    SmartDashboard.putNumber("Vision/Robot X (m)", robotPose.getX());
-    SmartDashboard.putNumber("Vision/Robot Y (m)", robotPose.getY());
-    SmartDashboard.putNumber("Vision/Robot Rotation (deg)", robotPose.getRotation().getDegrees());
+    SmartDashboard.putNumber("Pose/X (m)", robotPose.getX());
+    SmartDashboard.putNumber("Pose/Y (m)", robotPose.getY());
+    SmartDashboard.putNumber("Pose/Rotation (deg)", robotPose.getRotation().getDegrees());
+  }
+
+  /**
+   * Resets the pose estimator to a specific pose.
+   * Call this at the start of a match when you know where the robot is.
+   */
+  public void resetPose(Pose2d pose) {
+    driveSubsystem.resetEncoders();
+    driveSubsystem.resetGyro();
+    poseEstimator.resetPosition(
+        driveSubsystem.getHeading(),
+        driveSubsystem.getLeftPositionMeters(),
+        driveSubsystem.getRightPositionMeters(),
+        pose
+    );
   }
 }

@@ -30,7 +30,7 @@ public class RobotContainer {
   // The robot's subsystems
   private final CANDriveSubsystem driveSubsystem = new CANDriveSubsystem();
   private final CANFuelSubsystem fuelSubsystem = new CANFuelSubsystem();
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem();
+  private final VisionSubsystem visionSubsystem;  // Needs driveSubsystem, initialized in constructor
   private Lights lights;
 
   // The driver's controller
@@ -47,6 +47,9 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    // Initialize vision subsystem with drive subsystem (for odometry)
+    visionSubsystem = new VisionSubsystem(driveSubsystem);
+
     //if (Toggles.useLights) {
       lights = new Lights();
     //}

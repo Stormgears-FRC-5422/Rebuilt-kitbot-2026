@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.LimelightHelpers;
@@ -18,52 +19,57 @@ import static frc.robot.Constants.VisionConstants.*;
  * CONSERVATIVE MERGING RULES:
  * - If 2+ AprilTags are detected: ALWAYS merge (high confidence)
  * - If 1 AprilTag detected AND distance < 9 feet: merge (medium confidence)
- * - Otherwise: DON'T merge (not reliable enough)
+ * - Otherwise: DON'T merge (keep last known good pose)
  */
 public class VisionSubsystem extends SubsystemBase {
 
-  // Latest pose estimate from Limelight - public so other classes can access directly
-  public PoseEstimate latestEstimate = new PoseEstimate();
+  // The robot's estimated position on the field (updated when we get valid vision data)
+  public Pose2d robotPose = new Pose2d();
   
-  // Did the latest reading pass our merge criteria? - public for easy access
-  public boolean shouldMerge = false;
+  // Field visualization for SmartDashboard/Shuffleboard
+  private final Field2d field2d = new Field2d();
+
+  public VisionSubsystem() {
+    // Add the field to SmartDashboard so we can see the robot position
+    SmartDashboard.putData("Field", field2d);
+  }
 
   @Override
   public void periodic() {
     // ========================================
     // STEP 1: Get the latest pose estimate from Limelight
     // ========================================
-    latestEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(LIMELIGHT_NAME);
+    PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(LIMELIGHT_NAME);
 
     // ========================================
-    // STEP 2: Determine if we should merge this pose
+    // STEP 2: Merge pose if it meets our criteria
     // ========================================
-    shouldMerge = false;  // Start by assuming we shouldn't merge
+    boolean didMerge = false;
     
-    if (latestEstimate != null && latestEstimate.tagCount > 0) {
+    if (estimate != null && estimate.tagCount > 0) {
       // Rule 1: If we see 2+ tags, always merge (high confidence)
-      if (latestEstimate.tagCount >= MIN_TAGS_FOR_MERGE) {
-        shouldMerge = true;
+      if (estimate.tagCount >= MIN_TAGS_FOR_MERGE) {
+        robotPose = estimate.pose;
+        didMerge = true;
       }
       // Rule 2: If we see 1 tag AND it's close enough, merge
-      else if (latestEstimate.tagCount == 1 && 
-               latestEstimate.avgTagDist < MAX_SINGLE_TAG_DISTANCE_METERS) {
-        shouldMerge = true;
+      else if (estimate.tagCount == 1 && 
+               estimate.avgTagDist < MAX_SINGLE_TAG_DISTANCE_METERS) {
+        robotPose = estimate.pose;
+        didMerge = true;
       }
     }
 
     // ========================================
-    // STEP 3: Output debug info to SmartDashboard
+    // STEP 3: Update Field2d and SmartDashboard
     // ========================================
-    SmartDashboard.putNumber("Vision/Tag Count", latestEstimate.tagCount);
-    SmartDashboard.putNumber("Vision/Avg Tag Distance (m)", latestEstimate.avgTagDist);
-    SmartDashboard.putBoolean("Vision/Should Merge", shouldMerge);
+    field2d.setRobotPose(robotPose);
     
-    if (latestEstimate.tagCount > 0) {
-      Pose2d pose = latestEstimate.pose;
-      SmartDashboard.putNumber("Vision/Pose X (m)", pose.getX());
-      SmartDashboard.putNumber("Vision/Pose Y (m)", pose.getY());
-      SmartDashboard.putNumber("Vision/Pose Rotation (deg)", pose.getRotation().getDegrees());
-    }
+    SmartDashboard.putNumber("Vision/Tag Count", estimate != null ? estimate.tagCount : 0);
+    SmartDashboard.putNumber("Vision/Avg Tag Distance (m)", estimate != null ? estimate.avgTagDist : 0);
+    SmartDashboard.putBoolean("Vision/Did Merge", didMerge);
+    SmartDashboard.putNumber("Vision/Robot X (m)", robotPose.getX());
+    SmartDashboard.putNumber("Vision/Robot Y (m)", robotPose.getY());
+    SmartDashboard.putNumber("Vision/Robot Rotation (deg)", robotPose.getRotation().getDegrees());
   }
 }

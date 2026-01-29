@@ -64,4 +64,16 @@ public final class Constants {
     public static final double SHOOTER_SCALING = 0.75;
     public static final double FEEDER_SCALING = 0.75;
   }
+
+  public static final class VisionConstants {
+    // Name of the Limelight camera (as configured in the Limelight web interface)
+    public static final String LIMELIGHT_NAME = "limelight";
+
+    // Minimum number of AprilTags required for unconditional pose merge
+    public static final int MIN_TAGS_FOR_MERGE = 2;
+
+    // Maximum distance (in meters) for single-tag pose merge
+    // 9 feet = 2.7432 meters
+    public static final double MAX_SINGLE_TAG_DISTANCE_METERS = 2.74;
+  }
 }

@@ -25,23 +25,6 @@ public final class Constants {
     // Current limit for drivetrain motors. 60A is a reasonable maximum to reduce
     // likelihood of tripping breakers or damaging CIM motors
     public static final int DRIVE_MOTOR_CURRENT_LIMIT = 60;
-
-    // Odometry constants - adjust these for your robot!
-    // Wheel diameter in meters (6 inch wheels = 0.1524m)
-    public static final double WHEEL_DIAMETER_METERS = 0.1524;
-    
-    // Track width in meters (distance between left and right wheels)
-    // Measure from center of left wheel to center of right wheel
-    public static final double TRACK_WIDTH_METERS = 0.56;
-    
-    // Gear ratio (motor rotations per wheel rotation)
-    // For kitbot with 10.71:1 gearbox
-    public static final double GEAR_RATIO = 10.71;
-    
-    // Encoder conversion factor: motor rotations -> meters traveled
-    // Formula: (wheel circumference) / (gear ratio)
-    public static final double ENCODER_POSITION_FACTOR = 
-        (WHEEL_DIAMETER_METERS * Math.PI) / GEAR_RATIO;
   }
 
   public static final class FuelConstants {

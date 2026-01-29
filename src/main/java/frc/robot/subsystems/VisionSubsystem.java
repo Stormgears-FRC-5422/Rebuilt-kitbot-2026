@@ -52,15 +52,30 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Create the pose estimator
     // Parameters: kinematics, gyro angle, left distance, right distance, initial pose
-    // Standard deviations: how much we trust odometry vs vision
+    //
+    // VecBuilder.fill() creates a vector of "standard deviations" (uncertainty values)
+    // SMALLER values = MORE trust in that measurement
+    // LARGER values = LESS trust in that measurement
+    //
+    // First VecBuilder: How much we trust ODOMETRY (encoders + gyro)
+    //   - 0.05 meters uncertainty in X
+    //   - 0.05 meters uncertainty in Y  
+    //   - 0.01 radians uncertainty in rotation (~0.5 degrees)
+    //   These are small = we trust odometry a lot for short-term accuracy
+    //
+    // Second VecBuilder: How much we trust VISION (Limelight)
+    //   - 0.5 meters uncertainty in X, Y, and rotation
+    //   This is larger = we're more skeptical of vision by default
+    //   (We override this with tighter values when we see multiple tags)
+    //
     poseEstimator = new DifferentialDrivePoseEstimator(
         kinematics,
         driveSubsystem.heading,
         driveSubsystem.leftPositionMeters,
         driveSubsystem.rightPositionMeters,
         new Pose2d(),  // Start at origin
-        VecBuilder.fill(0.05, 0.05, 0.01),  // State std devs (x, y, theta) - trust odometry
-        VecBuilder.fill(0.5, 0.5, 0.5)      // Vision std devs - less trust in vision
+        VecBuilder.fill(0.05, 0.05, 0.01),  // Odometry std devs: (x meters, y meters, theta radians)
+        VecBuilder.fill(0.5, 0.5, 0.5)      // Vision std devs: (x meters, y meters, theta radians)
     );
 
     SmartDashboard.putData("Field", field2d);

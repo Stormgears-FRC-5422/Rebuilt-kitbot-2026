@@ -18,7 +18,8 @@ import static edu.wpi.first.units.Units.*;
         Color BLUE_COLOR = Color.kBlue;
         Color ORANGE_COLOR = new Color(255, 32, 0);
         Color PINK_COLOR = new Color(225,105,180);
-        private final DigitalInput sensor = new DigitalInput(9);
+        private final DigitalInput hopperHasBall = new DigitalInput(8);
+        private final DigitalInput hopperIsFull = new DigitalInput(7);
 
         private AddressableLED addressableLED;
         private AddressableLEDBuffer addressableLEDBuffer;
@@ -42,20 +43,30 @@ import static edu.wpi.first.units.Units.*;
         }
         public boolean isObjectDetected() {
             // Returns true if the beam is broken, false otherwise
-            return sensor.get();
+            return hopperHasBall.get();
         }
+        public boolean isHopperFull() {
+            // Returns true if the beam is broken, false otherwise
+            return hopperIsFull.get();
+        }
+        
 
         @Override
         public void periodic() {
             super.periodic();
             if (isObjectDetected()){
                 setSolid(BLUE_COLOR);
-                System.out.println("Blue");//sets the color to blue if there is a ball in the way
+                System.out.println("Blue");// blue is empty
+            }
+            else if (isHopperFull()){
+                setSolid(PINK_COLOR);
+                System.out.println("Pink"); //pink means neither full or empty
             }
             else{
                 setSolid(RED_COLOR);
-                System.out.println("Red");// if nothing is there then the color is set to red
+                System.out.println("Red");// red is full
             }
+            
             
 
             // Write the data to the LED strip

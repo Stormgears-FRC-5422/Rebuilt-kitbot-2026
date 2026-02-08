@@ -15,6 +15,7 @@ import static edu.wpi.first.units.Units.*;
         // Alliance variables
         //private final RobotState robotState;
         Color RED_COLOR = Color.kRed;
+        Color GREEN_COLOR = Color.kGreen;
         Color BLUE_COLOR = Color.kBlue;
         Color ORANGE_COLOR = new Color(255, 32, 0);
         Color PINK_COLOR = new Color(225,105,180);
@@ -55,16 +56,16 @@ import static edu.wpi.first.units.Units.*;
         public void periodic() {
             super.periodic();
             if (isObjectDetected()){
-                setSolid(BLUE_COLOR);
-                System.out.println("Blue");// blue is empty
+                setSolid(RED_COLOR);
+                System.out.println("Red");// red is empty
             }
             else if (isHopperFull()){
                 setSolid(PINK_COLOR);
-                System.out.println("Pink"); //pink means neither full or empty
+                System.out.println("Blue"); //blue means neither full or empty
             }
             else{
-                setSolid(RED_COLOR);
-                System.out.println("Red");// red is full
+                setSolid(GREEN_COLOR);
+                System.out.println("Green");// green is full
             }
             
             

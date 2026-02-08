@@ -18,6 +18,7 @@ import static edu.wpi.first.units.Units.*;
         Color BLUE_COLOR = Color.kBlue;
         Color ORANGE_COLOR = new Color(255, 32, 0);
         Color PINK_COLOR = new Color(225,105,180);
+        private final DigitalInput sensor = new DigitalInput(9);
 
         private AddressableLED addressableLED;
         private AddressableLEDBuffer addressableLEDBuffer;
@@ -39,14 +40,27 @@ import static edu.wpi.first.units.Units.*;
 
          //   robotState = RobotState.getInstance();
         }
+        public boolean isObjectDetected() {
+            // Returns true if the beam is broken, false otherwise
+            return sensor.get();
+        }
 
         @Override
         public void periodic() {
             super.periodic();
-            setSolid(BLUE_COLOR);
+            if (isObjectDetected()){
+                setSolid(BLUE_COLOR);
+                System.out.println("Blue");//sets the color to blue if there is a ball in the way
+            }
+            else{
+                setSolid(RED_COLOR);
+                System.out.println("Red");// if nothing is there then the color is set to red
+            }
+            
 
             // Write the data to the LED strip
             addressableLED.setData(addressableLEDBuffer);
+            
         }
 
         // Wrapper function to allow pulse effect to be applied to any pattern. Call this function rather

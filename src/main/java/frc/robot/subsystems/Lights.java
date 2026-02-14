@@ -60,8 +60,11 @@ import static edu.wpi.first.units.Units.*;
                 System.out.println("Red");// red is empty
             }
             else if (isHopperFull()){
-                setSolid(PINK_COLOR);
-                System.out.println("Blue"); //blue means neither full or empty
+                LEDPattern redPattern = LEDPattern.solid(RED_COLOR);
+                LEDPattern greenPattern = LEDPattern.solid(GREEN_COLOR);
+                patternApplyTo(redPattern, m_left);
+                patternApplyTo(greenPattern, m_right);
+                System.out.println("Red-Green"); // red-green neither full or empty
             }
             else{
                 setSolid(GREEN_COLOR);
